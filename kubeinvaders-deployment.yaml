@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubeinvaders
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubeinvaders
+  namespace: kubeinvaders
+  labels:
+    app.kubernetes.io/name: kubeinvaders
+spec:
+  ports:
+  - port: 1234
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: kubeinvaders
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubeinvaders
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubeinvaders
+  namespace: kubeinvaders
+  labels:
+    app.kubernetes.io/instance: kubeinvaders
+    app.kubernetes.io/name: kubeinvaders
+  annotations:
+    deployment.kubernetes.io/revision: '5'
+  selfLink: /apis/apps/v1/namespaces/kubeinvaders/deployments/kubeinvaders
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: kubeinvaders
+      app.kubernetes.io/name: kubeinvaders
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: kubeinvaders
+        app.kubernetes.io/name: kubeinvaders
+    spec:
+      containers:
+        - name: kubeinvaders
+          image: luckysideburn/kubeinvaders:v1.9.4
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: ENDPOINT
+              value: www.killpods.ga
+            - name: NAMESPACE
+              value: kubeinvaders,default
+            - name: ALIENPROXIMITY
+              value: '10'
+            - name: HITSLIMIT
+              value: '1'
+            - name: UPDATETIME
+              value: '0.5'
+          volumeMounts:
+            - mountPath: /usr/local/openresty
+              name: openresty
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      serviceAccountName: kubeinvaders
+      serviceAccount: kubeinvaders
+      securityContext: {}
+      schedulerName: default-scheduler
+      volumes:
+        - emptyDir: {}
+          name: openresty
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
